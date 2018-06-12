@@ -75,15 +75,18 @@ int main(int argc, char *argv[])
 		pinMode(pin_array[i], OUTPUT);
 	}
 	printf("Done\n");
-
+	
+	// create the infrared ISR
 	wiringPiISR(29, INT_EDGE_RISING, &ISR);
 
 	// Server Startup
 	printf("Initialize Connection To Server...\n");
 	connect_s();
-
+	
+	// create thread
 	create_success = pthread_create(&cutting, NULL, slave, NULL);
-
+	
+	// go into display loop
 	printf("Start Main loop\n");
 	if (create_success == 0)
 	{
@@ -91,8 +94,10 @@ int main(int argc, char *argv[])
 		{
 			for (pin = 0; pin < 24; pin++)
 			{
+				// display array onto LEDs
 				digitalWrite(pin_array[pin], image[index2] & (1 << pin));
 			}
+			// used to properly time the display to the infrared ISR
 			index2++;
 			index2 %= 120;
 			delayMicroseconds(244);
@@ -105,6 +110,7 @@ int main(int argc, char *argv[])
 	return 0;
 }
 
+// keyboard interrupt function
 void control_event(int sig)
 {
 	printf("\b\b  \nExiting pov... ");
@@ -117,6 +123,7 @@ void control_event(int sig)
 	exit(EXIT_SUCCESS);
 }
 
+// connect to server function
 void connect_s(void)
 {
 	char ip[20];
@@ -127,6 +134,7 @@ void connect_s(void)
 	initWebClient(ip);
 }
 
+// receive message function
 void receive_m(void)
 {
 	//char message[MESSAGE_BUFFER_SIZE];
@@ -134,6 +142,7 @@ void receive_m(void)
 	sprintf(message, "%s", getMessage());
 }
 
+// Infrared ISR that resets slice
 void ISR(void)
 {
 	if( index3 == 0)
@@ -142,6 +151,7 @@ void ISR(void)
 	index3 %= 2;
 }
 
+// the thread that is used for the message receiving thread
 void *slave(void *arg)
 {
 	const char s[] = ",\n";
